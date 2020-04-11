@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12d7d60de3cbd7e4f8fc7625538c2961, type: 3}
+  m_Name: StartTile
+  m_EditorClassIdentifier: 
+  prefab: {fileID: 8446340793006353421, guid: 43721c92f02b24a4bbb11893b4d25f6b, type: 3}
+  tileType: 8
+  walkable: 1

@@ -1,0 +1,16 @@
+Rule 1
+{
+	map_X
+	X = Level
+
+	Ex)
+	Map for Level 4: map_4
+	Map for Level 12: map_12
+}
+
+Rule 2
+{
+	Lines, that come after the seperator('#'), indicate wave information.
+	Each lines has another seperator(' ') representing number of different types of enemies.
+	Enemy type's order should match with EnemyType enum's order.
+}
