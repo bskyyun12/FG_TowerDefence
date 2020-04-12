@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections;
-using UniRx;
-using UniRx.Triggers;
 using UnityEngine;
 
 public class BombBall : ProjectileBase
@@ -15,11 +13,10 @@ public class BombBall : ProjectileBase
 	float explodeVisualDuration = .5f;
 	Coroutine explodeCoroutine;
 
-	private void Start()
+	private void Update()
 	{
-		this.UpdateAsObservable()
-			.Where(x => target != null)
-			.Subscribe(x => Move());
+		if (target != null)
+		{ Move(); }
 	}
 
 	public override void Reset()

@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections;
-using UniRx;
-using UniRx.Triggers;
 using UnityEngine;
 
 public class FreezeBall : ProjectileBase
@@ -13,11 +11,11 @@ public class FreezeBall : ProjectileBase
 	float freezeVisualSize = 1f;
 	Coroutine freezeCoroutine;
 
-	private void Start()
+
+	private void Update()
 	{
-		this.UpdateAsObservable()
-			.Where(x => target != null)
-			.Subscribe(x => Move());
+		if (target != null)
+		{ Move(); }
 	}
 
 	private void Move()

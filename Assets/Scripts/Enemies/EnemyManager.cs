@@ -38,7 +38,6 @@ public class EnemyManager : MonoBehaviour
 	{
 		enemyPools[enemy.PoolIndex].ReturnToPool(enemy);
 		SpawnedEnemies--;
-		Debug.Log(SpawnedEnemies);
 	}
 
 	public void StartSpawn(int currentWave)
@@ -57,7 +56,7 @@ public class EnemyManager : MonoBehaviour
 	{
 		while (true)
 		{
-			if (SpawnAmoutLeft == -1)
+			if (SpawnAmoutLeft == -1 || GameManager.GameOver)
 			{
 				StopCoroutine(Spawn());
 				yield break;

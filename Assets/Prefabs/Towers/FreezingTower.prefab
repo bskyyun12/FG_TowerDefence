@@ -317,9 +317,9 @@ MonoBehaviour:
   range: 6
   fireRate: 1.5
   damage: 5
-  projectileSpeed: 10
+  projectileSpeed: 20
   freezeChance: 100
-  moveSpeedDecrese: 100
+  moveSpeedDecrese: 80
   freezeDuration: 2
 --- !u!1 &7391422965515881056
 GameObject:

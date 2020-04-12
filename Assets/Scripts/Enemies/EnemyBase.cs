@@ -37,6 +37,7 @@ public class EnemyBase : MonoBehaviour, IResettable
 	public float BaseHealth => baseHealth;
 	public GameObject Prefab => prefab;
 	public EnemyType EnemyType => enemyType;
+	public int Damage => damage;
 
 	// Freeze
 	bool isFreezing = false;
@@ -52,11 +53,16 @@ public class EnemyBase : MonoBehaviour, IResettable
 	public int PoolIndex { get; set; }
 
 	// Stream for dead enemies
-	private static Subject<EnemyBase> onReturnToPoolStream = new Subject<EnemyBase>();
-	
+	private static Subject<EnemyBase> onReturnToPoolStream = new Subject<EnemyBase>();	
 	// public Observable stream
 	public static IObservable<EnemyBase> OnReturnToPoolObservable 
-											=> onReturnToPoolStream.AsObservable();	
+											=> onReturnToPoolStream.AsObservable();
+	
+
+	private static Subject<EnemyBase> damageStream = new Subject<EnemyBase>();
+	public static IObservable<EnemyBase> DamageObservable
+											=> damageStream.AsObservable();
+
 
 	private void Awake()
 	{
@@ -71,9 +77,9 @@ public class EnemyBase : MonoBehaviour, IResettable
 		isDead.Value = false;
 
 		// Move if not dead
-		this.UpdateAsObservable()
-			.Where(_ => !isDead.Value)
-			.Subscribe(x => Move());
+		//this.UpdateAsObservable()
+		//	.Where(_ => !isDead.Value)
+		//	.Subscribe(x => Move());
 
 		// dead condition
 		this.UpdateAsObservable()
@@ -101,6 +107,14 @@ public class EnemyBase : MonoBehaviour, IResettable
 		animator.SetBool("isWalking", true);
 
 		GoToGoal();
+	}
+
+	private void Update()
+	{
+		if (!IsDead)
+		{
+			Move();
+		}
 	}
 
 	private void GoToGoal()
@@ -133,7 +147,8 @@ public class EnemyBase : MonoBehaviour, IResettable
 			}
 			else
 			{
-				PlayerHealth.LoseLife(damage);
+				//Player.LoseLife(Damage);
+				damageStream.OnNext(this);
 				isDead.Value = true;
 			}
 		}
@@ -165,7 +180,6 @@ public class EnemyBase : MonoBehaviour, IResettable
 	public void TakeDamage(float damage)
 	{
 		Debug.Assert(damage >= 0f, "Damage value can't be negative!");
-		//currentHealth -= damage;
 		currentLife.Value -= damage;
 	}
 
@@ -192,8 +206,8 @@ public class EnemyBase : MonoBehaviour, IResettable
 	private IEnumerator OnFreeze(float MoveSpeedDecrese, float freezeDuration)
 	{
 		isFreezing = true;
-		currentSpeed *= (1f - (MoveSpeedDecrese * .01f));
-		currentSpeed = Mathf.Max(0f, currentSpeed);
+		currentSpeed *= (100f - MoveSpeedDecrese) * 0.01f;
+		currentSpeed = Mathf.Clamp(currentSpeed, 0f, baseSpeed);
 
 		while (true)
 		{

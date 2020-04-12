@@ -72,6 +72,9 @@ public abstract class TowerBase : MonoBehaviour
 	{
 		while (true)
 		{
+			if (target == null)
+			{ target = GetTarget(); }
+
 			if (target != null && !target.Enemy.IsDead)
 			{
 				// shoot
@@ -89,12 +92,12 @@ public abstract class TowerBase : MonoBehaviour
 
 	protected virtual void Shoot(TargetPoint target)
 	{ }
-	
+
 	public virtual void OnDamageTarget(TargetPoint target)
 	{ }
 
 	public virtual void OnAreaDamage(Vector3 centerPosition)
-	{ }	
+	{ }
 
 	private void OnDrawGizmosSelected()
 	{

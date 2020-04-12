@@ -36,7 +36,7 @@ public class BombTower : TowerBase
 	protected override void Shoot(TargetPoint target)
 	{
 		base.Shoot(target);
-
+		
 		Launch(target);
 
 		ProjectileBase projectile = pool.Get();
@@ -114,9 +114,8 @@ public class BombTower : TowerBase
 		Debug.Assert(rootContent >= 0f, "Launch velocity insufficient for range!" + rootContent);
 
 		float tanTheta = (s2 + Mathf.Sqrt(rootContent)) / (g * x);
-		float theta = Mathf.Atan(tanTheta);
-		float cosTheta = Mathf.Cos(theta);
-		float sinTheta = Mathf.Sin(theta);
+		float cosTheta = Mathf.Cos(Mathf.Atan(tanTheta));
+		float sinTheta = cosTheta * tanTheta;
 
 		launchVelocity = new Vector3(s * cosTheta * dir.x, s * sinTheta, s * cosTheta * dir.y);
 

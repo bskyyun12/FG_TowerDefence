@@ -2,6 +2,7 @@
 using System.Collections;
 using AI;
 using System;
+using UniRx;
 
 public abstract class StateMachine : MonoBehaviour
 {
@@ -36,7 +37,7 @@ public class GameStart : State
 	public GameStart(GameManager gameManager) : base(gameManager)
 	{
 		GameManager.GameOver = false;
-		PlayerHealth.Initialize();
+		//Player.Initialize();
 
 		gameManager.CurrentLevel = 0;
 		gameManager.CurrentWave = 0;
@@ -110,7 +111,7 @@ public class WaveStart : State
 				yield break;
 			}
 
-			if (PlayerHealth.CurrentLife <= 0)
+			if (Player.IsDead.Value)
 			{
 				gameManager.SetState(new Lost(gameManager));
 				yield break;
