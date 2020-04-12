@@ -3,33 +3,30 @@ using UnityEngine.UI;
 
 public class PlayerHealth : MonoBehaviour
 {
-    [SerializeField] Slider slider = default;
+	[SerializeField] Slider slider = default;
 
-    static float MaxLife => 20;
+	static float MaxLife => 20;
 	public static float CurrentLife { get; private set; }
 
-    public static void Initialize()
-    {
-        CurrentLife = MaxLife;
-    }
+	public static void Initialize()
+	{
+		CurrentLife = MaxLife;
+	}
 
-    // Update is called once per frame
-    void Update()
-    {
-        slider.value = CalculateHealth();
-    }
+	// Update is called once per frame
+	void Update()
+	{
+		slider.value = CalculateHealth();
+	}
 
-    float CalculateHealth()
-    {
-        return CurrentLife / MaxLife;
-    }
+	float CalculateHealth()
+	{
+		return CurrentLife / MaxLife;
+	}
 
-    public static void LoseLife(int amount)
-    {
-        if (CurrentLife >= 0)
-        {
-            CurrentLife -= amount;
-            Debug.Log("Lose Life! Life: " + CurrentLife);
-        }
-    }
+	public static void LoseLife(int amount)
+	{
+		if (CurrentLife >= 0)
+		{ CurrentLife -= amount; }
+	}
 }

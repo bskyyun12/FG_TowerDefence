@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections;
+using UniRx;
+using UniRx.Triggers;
 using UnityEngine;
 
 public class BombBall : ProjectileBase
@@ -12,6 +14,13 @@ public class BombBall : ProjectileBase
 	[SerializeField] Transform explosion = default;
 	float explodeVisualDuration = .5f;
 	Coroutine explodeCoroutine;
+
+	private void Start()
+	{
+		this.UpdateAsObservable()
+			.Where(x => target != null)
+			.Subscribe(x => Move());
+	}
 
 	public override void Reset()
 	{
@@ -34,36 +43,31 @@ public class BombBall : ProjectileBase
 
 	}
 
-	protected override void Update()
+	void Move()
 	{
-		base.Update();
+		time += Time.deltaTime;
+		Vector3 d = launchVelocity;
+		d.y -= 9.81f * time;
+		transform.localRotation = Quaternion.LookRotation(d);
 
-		if (target)
+		Vector3 p = LaunchPoint + launchVelocity * time;
+		p.y -= 0.5f * 9.81f * time * time;
+
+		if (p.y > 0f)
 		{
-			time += Time.deltaTime;
-			Vector3 d = launchVelocity;
-			d.y -= 9.81f * time;
-			transform.localRotation = Quaternion.LookRotation(d);
-
-			Vector3 p = LaunchPoint + launchVelocity * time;
-			p.y -= 0.5f * 9.81f * time * time;
-
-			if (p.y > 0f)
+			transform.localPosition = p;
+		}
+		else
+		{
+			if (explodeCoroutine == null)
 			{
-				transform.localPosition = p;
+				explodeCoroutine = StartCoroutine(Explode());
 			}
 			else
 			{
-				if (explodeCoroutine == null)
-				{
-					explodeCoroutine = StartCoroutine(Explode());
-				}
-				else
-				{
-					float colliderRadius = explosion.GetComponent<SphereCollider>().radius;
-					Vector3 targetScale = Vector3.one * explodeRadius / colliderRadius / transform.localScale.x;
-					explosion.localScale = Vector3.Lerp(explosion.localScale, targetScale, 5f * Time.deltaTime);
-				}
+				float colliderRadius = explosion.GetComponent<SphereCollider>().radius;
+				Vector3 targetScale = Vector3.one * explodeRadius / colliderRadius / transform.localScale.x;
+				explosion.localScale = Vector3.Lerp(explosion.localScale, targetScale, 5f * Time.deltaTime);
 			}
 		}
 	}
@@ -75,7 +79,7 @@ public class BombBall : ProjectileBase
 		tower.OnAreaDamage(targetPos);
 
 		yield return new WaitForSeconds(explodeVisualDuration);
-		OnDeath();
+		OnReturnToPool();
 		explodeCoroutine = null;
 	}
 }

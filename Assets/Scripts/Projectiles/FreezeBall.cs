@@ -1,4 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
+using UniRx;
+using UniRx.Triggers;
 using UnityEngine;
 
 public class FreezeBall : ProjectileBase
@@ -9,6 +12,32 @@ public class FreezeBall : ProjectileBase
 	float freezeVisualDuration = .5f;
 	float freezeVisualSize = 1f;
 	Coroutine freezeCoroutine;
+
+	private void Start()
+	{
+		this.UpdateAsObservable()
+			.Where(x => target != null)
+			.Subscribe(x => Move());
+	}
+
+	private void Move()
+	{
+		float dist = Vector3.Distance(transform.position, target.Position);
+		if (dist > (ProjectileScaleX + TargetScaleX) * .5f)
+		{
+			transform.position = Vector3.Lerp(transform.position,
+											  target.Position,
+											  speed * Time.deltaTime
+											  );
+		}
+		else
+		{
+			if (freezeCoroutine == null)
+			{
+				freezeCoroutine = StartCoroutine(Explode());
+			}
+		}
+	}
 
 	public override void Reset()
 	{
@@ -27,30 +56,6 @@ public class FreezeBall : ProjectileBase
 		transform.position = LaunchPoint;
 	}
 
-	protected override void Update()
-	{
-		base.Update();
-
-		if (target)
-		{
-			float dist = Vector3.Distance(transform.position, target.Position);
-			if (dist > (ProjectileScaleX + TargetScaleX) * .5f)
-			{
-				transform.position = Vector3.Lerp(transform.position,
-												  target.Position,
-												  speed * Time.deltaTime
-												  );
-			}
-			else
-			{
-				if (freezeCoroutine == null)
-				{
-					freezeCoroutine = StartCoroutine(Explode());
-				}
-			}
-		}
-	}
-
 	private IEnumerator Explode()
 	{
 		freezeVisual.position = new Vector3(transform.position.x, 0f, transform.position.z);
@@ -60,7 +65,7 @@ public class FreezeBall : ProjectileBase
 		tower.OnDamageTarget(target);
 
 		yield return new WaitForSeconds(freezeVisualDuration);
-		OnDeath();
+		OnReturnToPool();
 		freezeCoroutine = null;
 	}
 }

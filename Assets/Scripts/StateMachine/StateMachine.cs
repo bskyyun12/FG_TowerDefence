@@ -104,7 +104,7 @@ public class WaveStart : State
 
 		while (true)
 		{
-			if (gameManager.enemyManager.SpawnedEnemies == 0)
+			if (EnemyManager.SpawnedEnemies == 0)
 			{
 				gameManager.SetState(new WaveClear(gameManager));
 				yield break;

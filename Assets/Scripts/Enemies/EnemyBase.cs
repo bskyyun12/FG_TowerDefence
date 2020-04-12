@@ -4,19 +4,19 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UniRx;
+using UniRx.Triggers;
 using UnityEngine;
 
 public class EnemyBase : MonoBehaviour, IResettable
 {
-	public event EventHandler Death;
-	
+	//public event EventHandler Death;
+
 	//public PrefabFactory<EnemyBase> prefabFactory;
 
 	[Header("Stat")]
 	[SerializeField] EnemyType enemyType = default;
 	[SerializeField] GameObject prefab = default;
 	[SerializeField] float baseHealth = 100f;
-	[SerializeField] float currentHealth = 0f;
 	[SerializeField] int damage = 1;
 
 	[Header("Movement")]
@@ -31,55 +31,71 @@ public class EnemyBase : MonoBehaviour, IResettable
 	Vector3 startTilePos;
 	Vector3 endTilePos;
 
-	Coroutine deathCoroutine;
-
-	public bool IsAlive => CurrentHealth > 0f;
+	public bool IsDead => isDead.Value;
+	public float CurrentLife => currentLife.Value;
 	public float SpawnOffsetY => transform.localScale.y * 0.75f;
 	public float BaseHealth => baseHealth;
-	public float CurrentHealth => currentHealth;
 	public GameObject Prefab => prefab;
 	public EnemyType EnemyType => enemyType;
 
-
 	// Freeze
-	bool isFreezing;
+	bool isFreezing = false;
 	float freezeTimer;
-	float freezeDuration;
 
 	// Anim
 	Animator animator;
 
 	// UniRx
-	public ReactiveProperty<float> CurrentLife;
+	private IReactiveProperty<float> currentLife;
+	private BoolReactiveProperty isDead = new BoolReactiveProperty();
 
+	public int PoolIndex { get; set; }
+
+	// Stream for dead enemies
+	private static Subject<EnemyBase> onReturnToPoolStream = new Subject<EnemyBase>();
+	
+	// public Observable stream
+	public static IObservable<EnemyBase> OnReturnToPoolObservable 
+											=> onReturnToPoolStream.AsObservable();	
 
 	private void Awake()
 	{
 		animator = GetComponent<Animator>();
 	}
 
-	private void Start()
-	{
-		Observable.EveryUpdate()
-			.Where(x => CurrentLife.Value <= 0 || GameManager.GameOver)
-			.First()
-			.Subscribe(x => StartCoroutine(OnDeath()));
-	}
-
 	private void OnEnable()
 	{
 		// UniRx
-		CurrentLife = new FloatReactiveProperty(baseHealth);
+		// reset life and dead flag
+		currentLife = new FloatReactiveProperty(baseHealth);
+		isDead.Value = false;
+
+		// Move if not dead
+		this.UpdateAsObservable()
+			.Where(_ => !isDead.Value)
+			.Subscribe(x => Move());
+
+		// dead condition
+		this.UpdateAsObservable()
+			.Where(_ => currentLife.Value <= 0f || GameManager.GameOver)
+			.Subscribe(_ =>
+			{
+				isDead.Value = true;
+			});
+			   
+		// if dead, start death coroutine
+		isDead
+			.Where(x => x)
+			.Subscribe(x => StartCoroutine(OnDeath()));
+
+
 
 		startTilePos = Astar.grid[MapData.startTile.x, MapData.startTile.y].worldPosition;
 		endTilePos = Astar.grid[MapData.endTile.x, MapData.endTile.y].worldPosition;
 
-		currentHealth = BaseHealth;
 		currentSpeed = baseSpeed;
 
 		transform.position = new Vector3(startTilePos.x, SpawnOffsetY, startTilePos.z);
-
-		deathCoroutine = null;
 
 		animator.SetBool("Killed", false);
 		animator.SetBool("isWalking", true);
@@ -97,25 +113,6 @@ public class EnemyBase : MonoBehaviour, IResettable
 	public void Reset()
 	{
 		gameObject.SetActive(false);
-	}
-
-	void LateUpdate()
-	{
-		//if (GameManager.GameOver)
-		//{ StartCoroutine(OnDeath()); }
-
-		if (IsAlive)
-		{ Move(); }
-
-		if (isFreezing)
-		{
-			freezeTimer += Time.deltaTime;
-			if (freezeTimer > freezeDuration)
-			{
-				isFreezing = false;
-				currentSpeed = baseSpeed;
-			}
-		}
 	}
 
 	private void Move()
@@ -136,11 +133,8 @@ public class EnemyBase : MonoBehaviour, IResettable
 			}
 			else
 			{
-				if (deathCoroutine == null)
-				{
-					PlayerHealth.LoseLife(damage);
-					deathCoroutine = StartCoroutine(OnDeath());
-				}
+				PlayerHealth.LoseLife(damage);
+				isDead.Value = true;
 			}
 		}
 
@@ -171,39 +165,46 @@ public class EnemyBase : MonoBehaviour, IResettable
 	public void TakeDamage(float damage)
 	{
 		Debug.Assert(damage >= 0f, "Damage value can't be negative!");
-		currentHealth -= damage;
-
-		if (!IsAlive)
-		{
-			//if (deathCoroutine == null)
-			//{
-			//	deathCoroutine = StartCoroutine(OnDeath());
-			//}
-		}
-		else
-		{
-			// doesn't work properly.. idk why
-			//animator.SetTrigger("Damaged");
-		}
+		//currentHealth -= damage;
+		currentLife.Value -= damage;
 	}
 
 	private IEnumerator OnDeath()
 	{
-		currentHealth = 0f;
 		animator.SetBool("Killed", true);
-		//animator.SetTrigger("Killed");
+
 		yield return new WaitForSeconds(2f);
-		Death?.Invoke(this, null);
+
+		// let this script flow in the PoolStream
+		onReturnToPoolStream.OnNext(this);
 	}
 
 
 	public void Freeze(float MoveSpeedDecrese, float freezeDuration)
 	{
+		freezeTimer = 0f;
+		if (!isFreezing)
+		{
+			StartCoroutine(OnFreeze(MoveSpeedDecrese, freezeDuration));
+		}
+	}
+
+	private IEnumerator OnFreeze(float MoveSpeedDecrese, float freezeDuration)
+	{
+		isFreezing = true;
 		currentSpeed *= (1f - (MoveSpeedDecrese * .01f));
 		currentSpeed = Mathf.Max(0f, currentSpeed);
 
-		isFreezing = true;
-		freezeTimer = 0f;
-		this.freezeDuration = freezeDuration;
+		while (true)
+		{
+			freezeTimer += Time.deltaTime;
+			if (freezeTimer > freezeDuration)
+			{
+				isFreezing = false;
+				currentSpeed = baseSpeed;
+				yield break;
+			}
+			yield return null;
+		}
 	}
 }

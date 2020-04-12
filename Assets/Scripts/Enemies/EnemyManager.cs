@@ -2,10 +2,11 @@
 using System.Collections;
 using System;
 using Tools;
+using UniRx;
 
 public class EnemyManager : MonoBehaviour
 {
-	IPool<EnemyBase>[] enemyPools;
+	public static IPool<EnemyBase>[] enemyPools;
 
 	int currentWave;
 	Array enemyEnumArray;
@@ -14,7 +15,7 @@ public class EnemyManager : MonoBehaviour
 	[SerializeField, Range(.1f, 3f)]
 	float timeBetweenSpawn = 2f;
 
-	public int SpawnedEnemies { get; private set; }
+	public static int SpawnedEnemies { get; set; }
 	public int SpawnAmoutLeft { get; private set; }
 
 	void Start()
@@ -27,6 +28,17 @@ public class EnemyManager : MonoBehaviour
 			EnemyBase enemy = EnemyMethods.GetEnemy((EnemyType)enemyEnumArray.GetValue(i));
 			enemyPools[i] = new ObjectPool<EnemyBase>(new PrefabFactory<EnemyBase>(enemy.Prefab));
 		}
+
+		// get the stream and subscribe
+		EnemyBase.OnReturnToPoolObservable
+			.Subscribe(x => OnReturnToPool(x));
+	}
+
+	void OnReturnToPool(EnemyBase enemy)
+	{
+		enemyPools[enemy.PoolIndex].ReturnToPool(enemy);
+		SpawnedEnemies--;
+		Debug.Log(SpawnedEnemies);
 	}
 
 	public void StartSpawn(int currentWave)
@@ -35,6 +47,7 @@ public class EnemyManager : MonoBehaviour
 
 		// Get num of enemies of first type(Standard)
 		SpawnAmoutLeft = MapData.GetNumberOfEnemy((int)enemyEnumArray.GetValue(0), currentWave);
+		SpawnedEnemies = 0;
 		enemyIndex = 0;
 
 		StartCoroutine(Spawn());
@@ -51,9 +64,9 @@ public class EnemyManager : MonoBehaviour
 			}
 
 			if (SpawnAmoutLeft == 0)
-			{				
+			{
 				enemyIndex++;
-				
+
 				if (enemyIndex < enemyEnumArray.Length)
 				{
 					SpawnAmoutLeft = MapData.GetNumberOfEnemy((int)enemyEnumArray.GetValue(enemyIndex), currentWave);
@@ -61,7 +74,6 @@ public class EnemyManager : MonoBehaviour
 				else
 				{
 					Debug.Log("No more Enemies left in this wave.");
-					//HasNextLevel = false;
 					StopCoroutine(Spawn());
 					yield break;
 				}
@@ -69,7 +81,6 @@ public class EnemyManager : MonoBehaviour
 
 			if (SpawnAmoutLeft > 0)
 			{
-				//SpawnEnemy((EnemyType)values.GetValue(valuesIterator));
 				SpawnEnemy(enemyIndex);
 				SpawnAmoutLeft--;
 			}
@@ -83,15 +94,7 @@ public class EnemyManager : MonoBehaviour
 	{
 		EnemyBase enemy = enemyPools[enemyIndex].Get();
 		enemy.gameObject.SetActive(true);
+		enemy.PoolIndex = enemyIndex;
 		SpawnedEnemies++;
-
-		EventHandler handler = null;
-		handler = (sender, e) =>
-		{
-			enemyPools[enemyIndex].ReturnToPool(enemy);
-			SpawnedEnemies--;
-			enemy.Death -= handler;
-		};
-		enemy.Death += handler;
 	}
 }

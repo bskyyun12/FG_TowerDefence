@@ -9,9 +9,9 @@ public class FreezeTower : TowerBase
 	[SerializeField, Range(10f, 100f)] float moveSpeedDecrese = 15f;
 	[SerializeField, Range(.1f, 10f)] float freezeDuration = 2f;
 
-	protected override void Shoot()
+	protected override void Shoot(TargetPoint target)
 	{
-		base.Shoot();
+		base.Shoot(target);
 
 		ProjectileBase projectile = pool.Get();
 		projectile.gameObject.SetActive(true);
@@ -21,16 +21,16 @@ public class FreezeTower : TowerBase
 		handler = (sender, e) =>
 		{
 			pool.ReturnToPool(projectile);
-			projectile.Death -= handler;
+			projectile.ReturnToPool -= handler;
 		};
-		projectile.Death += handler;
+		projectile.ReturnToPool += handler;
 	}
 
 	public override void OnDamageTarget(TargetPoint target)
 	{
 		base.OnDamageTarget(target);
 		
-		if (target.Enemy.IsAlive)
+		if (!target.Enemy.IsDead)
 		{
 			target.Enemy.TakeDamage(Damage);
 

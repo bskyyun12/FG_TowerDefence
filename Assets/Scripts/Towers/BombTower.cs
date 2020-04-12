@@ -33,9 +33,9 @@ public class BombTower : TowerBase
 		}
 	}
 
-	protected override void Shoot()
+	protected override void Shoot(TargetPoint target)
 	{
-		base.Shoot();
+		base.Shoot(target);
 
 		Launch(target);
 
@@ -47,9 +47,9 @@ public class BombTower : TowerBase
 		handler = (sender, e) =>
 		{
 			pool.ReturnToPool(projectile);
-			projectile.Death -= handler;
+			projectile.ReturnToPool -= handler;
 		};
-		projectile.Death += handler;
+		projectile.ReturnToPool += handler;
 
 	}
 

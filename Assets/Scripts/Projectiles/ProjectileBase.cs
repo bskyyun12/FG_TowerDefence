@@ -4,7 +4,7 @@ using System;
 
 public abstract class ProjectileBase : MonoBehaviour, IResettable
 {
-	public event EventHandler Death;
+	public event EventHandler ReturnToPool;
 
 	protected TargetPoint target;
 
@@ -20,12 +20,9 @@ public abstract class ProjectileBase : MonoBehaviour, IResettable
 	public virtual void FireBullet(TowerBase tower, TargetPoint target, float projectileSpeed)
 	{ }
 
-	protected virtual void Update()
-	{ }
-
-	protected void OnDeath()
+	protected void OnReturnToPool()
 	{
-		Death?.Invoke(this, null);
+		ReturnToPool?.Invoke(this, null);
 	}
 
 	public virtual void Reset()

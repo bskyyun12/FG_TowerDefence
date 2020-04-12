@@ -319,7 +319,7 @@ MonoBehaviour:
   damage: 5
   projectileSpeed: 10
   freezeChance: 100
-  moveSpeedDecrese: 15
+  moveSpeedDecrese: 100
   freezeDuration: 2
 --- !u!1 &7391422965515881056
 GameObject:

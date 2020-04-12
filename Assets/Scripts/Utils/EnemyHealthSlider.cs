@@ -8,7 +8,7 @@ public class EnemyHealthSlider : MonoBehaviour
     [SerializeField] EnemyBase enemy = default;
     [SerializeField] Slider slider = default;
 
-    float CurrentHealth => enemy.CurrentHealth;
+    float CurrentHealth => enemy.CurrentLife;
     float MaxHealth => enemy.BaseHealth;
 
     // Start is called before the first frame update

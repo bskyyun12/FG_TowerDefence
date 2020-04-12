@@ -2,6 +2,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UniRx;
+using UniRx.Triggers;
 using UnityEngine;
 
 public class GameManager : StateMachine
@@ -16,29 +18,21 @@ public class GameManager : StateMachine
 
 	public static bool GameOver { get; set; } = false;
 
+	private void Awake()
+	{
+		this.UpdateAsObservable()
+			.Where(x => Input.GetKeyDown(KeyCode.UpArrow))
+			.Where(x => GameSpeed < MaxGameSpeed)
+			.Subscribe(_ => Time.timeScale = ++GameSpeed);
+
+		this.UpdateAsObservable()
+			.Where(x => Input.GetKeyDown(KeyCode.DownArrow))
+			.Where(x => GameSpeed != 0f)
+			.Subscribe(_ => Time.timeScale = --GameSpeed);
+	}
+
 	private void Start()
 	{
 		SetState(new GameStart(this));
-
-
-	}
-
-	private void Update()
-	{
-		if (Input.GetKeyDown(KeyCode.UpArrow))
-		{
-			if (GameSpeed < MaxGameSpeed)
-			{
-				GameSpeed++;
-			}
-		}
-		if (Input.GetKeyDown(KeyCode.DownArrow))
-		{
-			if (GameSpeed != 0f)
-			{
-				GameSpeed--;
-			}
-		}
-		Time.timeScale = GameSpeed;
 	}
 }
